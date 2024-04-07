@@ -1,10 +1,7 @@
 import requests
 import pandas as pd
-import schedule
-import time
 
-# CSVファイルのパス
-csv_file_path = '1st_verify.csv'
+csv = pd.read_csv('1st_verify_online.csv')
 
 def download_json_data():
     url = "http://data.phishtank.com/data/online-valid.json"
@@ -16,41 +13,19 @@ def download_json_data():
         urls = [item['url'] for item in data][:200]
         return urls
     else:
-        print(f"Failed to download JSON data. Status code: {response.status_code}, Response body: {response.text}")
+        print("Failed to download JSON data.")
         return None
 
-def update_csv_file(urls):
-    try:
-        df_existing = pd.read_csv(csv_file_path)
-        print("CSV file loaded successfully.")
-    except FileNotFoundError:
-        df_existing = pd.DataFrame()
-        print("no exist")
+# Call the function to get the list of URLs
+urls = download_json_data()
 
-    # 新しいデータをDataFrameに変換
-    df_new = pd.DataFrame(urls, columns=['url'])
+# Check if the function returned a list of URLs
+if urls is not None:
+    # Convert the list of URLs into a DataFrame
+    df = pd.DataFrame(urls, columns=['url'])
     
-    # 既存のデータと新しいデータを結合
-    df = pd.concat([df_existing, df_new], ignore_index=True)
-    
-    # 重複を削除
-    df = df.drop_duplicates(subset='url')
-    
-    # 結合したデータをCSVファイルに保存
-    df.to_csv(csv_file_path, index=False)
-    print("CSV file updated successfully.")
-
-def main():
-    urls = download_json_data()
-    print("URLs downloaded successfully")
-    if urls is not None:
-        update_csv_file(urls)
-
-if __name__ == "__main__":
-    main()
-    schedule.every(1).hour.do(main)
-
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
+    # Save the DataFrame to a new CSV file
+    df.to_csv('extracted_urls.csv', index=False)
+    print("URLs saved to extracted_urls.csv")
+else:
+    print("No URLs were extracted.")
